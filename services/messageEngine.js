@@ -6,6 +6,14 @@ class MessageEngine {
 حسب آخر طلب لمنتج {{product_name}} نتوقع أنك على وشك الانتهاء 🐝  
 تقدر تعيد الطلب الآن من الرابط: {{link}}  
 استخدم الكود HONEY5 واحصل على 5% خصم ✨`;
+
+    // Custom message templates for different customer segments
+    this.segmentTemplates = {
+      NEW: `اهلا {{customer_name}}، نتمنى ان طلبك الاول حاز على رضاك. مشتاقين لك وبمناسبة عودتك التوصيل علينا!`,
+      AT_RISK: `عزيزي {{customer_name}}، نشكرك على ثقتك المتكررة في {{store_name}}، تقديرا لولائك الشديد نقدم اليك كود خصم ١٠٪؜ صالح للاستخدام في طلبك القادم THANKS10`,
+      VIP: `عزيزي {{customer_name}}، انت عميلنا الذهبي! وبمناسبة تجاوزك لـ ٥ طلبات نود ان نشكرك بتقديم كود خصم ١٥٪؜ مدى الحياة : GOLDEN15`,
+      CHURNED: `عزيزي {{customer_name}}، نفتقدك في {{store_name}}! نود أن نرحب بعودتك ونقدم لك كود خصم خاص: WELCOMEBACK`
+    };
   }
 
   replacePlaceholders(template, data) {
@@ -15,6 +23,61 @@ class MessageEngine {
       message = message.replace(regex, data[key] || '');
     });
     return message;
+  }
+
+  // Get message template for a specific segment
+  getSegmentTemplate(segment) {
+    return this.segmentTemplates[segment] || this.messageTemplate;
+  }
+
+  // Send a custom message to a customer based on their segment
+  async sendSegmentMessage(customerId, segment, storeName = 'متجرنا') {
+    try {
+      if (!db) {
+        throw new Error('Database not available');
+      }
+
+      // Get customer details
+      const customer = db.prepare(`
+        SELECT id, name, phone, email, store_id
+        FROM customers
+        WHERE id = ?
+      `).get(customerId);
+
+      if (!customer) {
+        throw new Error('Customer not found');
+      }
+
+      // Get template for segment
+      const template = this.getSegmentTemplate(segment);
+      
+      // Replace placeholders
+      const message = this.replacePlaceholders(template, {
+        customer_name: customer.name || 'عميلنا الكريم',
+        store_name: storeName
+      });
+
+      // Log the message (simulate sending)
+      console.log('='.repeat(50));
+      console.log(`[Message Engine] Sending ${segment} message to ${customer.name} (${customer.phone})`);
+      console.log('Message:');
+      console.log(message);
+      console.log('='.repeat(50));
+
+      // In production, this would send via SMS/WhatsApp API
+      // For now, we just log it
+
+      return { 
+        success: true, 
+        message,
+        customer_name: customer.name,
+        phone: customer.phone,
+        segment
+      };
+    } catch (error) {
+      console.error(`[Message Engine] Error sending segment message:`, error);
+      return { success: false, error: error.message };
+    }
   }
 
   async getPendingReminders() {

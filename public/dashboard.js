@@ -34,7 +34,7 @@ async function loadCustomers() {
         }
 
         tbody.innerHTML = data.customers.map(customer => {
-            const vipBadge = customer.is_vip ? '<span class="vip-badge">VIP</span>' : '';
+            const vipBadge = customer.is_vip ? '<span class="vip-badge">العميل الذهبي</span>' : '';
             const segmentClass = customer.segment.toLowerCase().replace('_', '-');
             
             let actionButton = '';
@@ -44,6 +44,8 @@ async function loadCustomers() {
                 actionButton = '<button class="btn-small" onclick="sendWinBack(' + customer.id + ')">إرسال رسالة استرجاع</button>';
             } else if (customer.segment === 'CHURNED') {
                 actionButton = '<button class="btn-small" onclick="sendCoupon(' + customer.id + ')">إرسال كوبون</button>';
+            } else if (customer.is_vip || customer.segment === 'VIP') {
+                actionButton = '<button class="btn-small" onclick="sendVipMessage(' + customer.id + ')">إرسال رسالة العميل الذهبي</button>';
             }
 
             return `
@@ -262,21 +264,66 @@ function getSegmentName(segment) {
         'ACTIVE': 'نشط',
         'AT_RISK': 'معرض للخطر',
         'CHURNED': 'متوقف',
-        'VIP': 'VIP'
+        'VIP': 'العميل الذهبي'
     };
     return names[segment] || segment;
 }
 
+// Send message to customer
+async function sendMessageToCustomer(customerId, segment, buttonElement) {
+    const storeId = getStoreId();
+    const originalText = buttonElement.textContent;
+    
+    // Disable button and show loading
+    buttonElement.disabled = true;
+    buttonElement.textContent = 'جاري الإرسال...';
+
+    try {
+        const response = await fetch(`/api/send-message/${customerId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                store_id: storeId,
+                segment: segment
+            })
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            alert(`تم إرسال الرسالة بنجاح إلى ${data.customer_name}\n\nالرسالة:\n${data.message_text}`);
+        } else {
+            alert('خطأ: ' + (data.error || 'فشل إرسال الرسالة'));
+        }
+    } catch (error) {
+        console.error('Error sending message:', error);
+        alert('خطأ في إرسال الرسالة');
+    } finally {
+        buttonElement.disabled = false;
+        buttonElement.textContent = originalText;
+    }
+}
+
 function sendWelcomeMsg(customerId) {
-    alert('سيتم إرسال رسالة ترحيب للعميل (محاكاة)');
+    const button = event.target;
+    sendMessageToCustomer(customerId, 'NEW', button);
 }
 
 function sendWinBack(customerId) {
-    alert('سيتم إرسال رسالة استرجاع للعميل (محاكاة)');
+    const button = event.target;
+    sendMessageToCustomer(customerId, 'AT_RISK', button);
 }
 
 function sendCoupon(customerId) {
-    alert('سيتم إرسال كوبون للعميل (محاكاة)');
+    const button = event.target;
+    sendMessageToCustomer(customerId, 'CHURNED', button);
+}
+
+function sendVipMessage(customerId) {
+    const button = event.target;
+    sendMessageToCustomer(customerId, 'VIP', button);
 }
 
 // Load data on page load

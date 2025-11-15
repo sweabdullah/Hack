@@ -2,8 +2,10 @@ const express = require('express');
 const db = require('../config/database');
 const SegmentationService = require('../services/segmentation');
 const ZidApi = require('../services/zidApi');
+const MessageEngine = require('../services/messageEngine');
 
 const router = express.Router();
+const messageEngine = new MessageEngine();
 
 // Helper to get merchant by store_id
 function getMerchant(storeId) {
@@ -231,6 +233,69 @@ router.post('/api/sync-customers', express.json(), async (req, res) => {
   } catch (error) {
     console.error('Sync customers error:', error);
     res.status(500).json({ error: 'Sync failed', details: error.message });
+  }
+});
+
+// POST /api/send-message/:customerId - Send message to a specific customer
+router.post('/api/send-message/:customerId', express.json(), async (req, res) => {
+  try {
+    const customerId = parseInt(req.params.customerId);
+    const { store_id, segment } = req.body;
+
+    if (!customerId) {
+      return res.status(400).json({ error: 'customerId required' });
+    }
+
+    if (!store_id) {
+      return res.status(400).json({ error: 'store_id required' });
+    }
+
+    if (!segment) {
+      return res.status(400).json({ error: 'segment required (NEW, AT_RISK, VIP, or CHURNED)' });
+    }
+
+    // Validate segment
+    const validSegments = ['NEW', 'AT_RISK', 'VIP', 'CHURNED'];
+    if (!validSegments.includes(segment)) {
+      return res.status(400).json({ error: `Invalid segment. Must be one of: ${validSegments.join(', ')}` });
+    }
+
+    // Get merchant for store name (default to 'متجرنا' if not available)
+    const merchant = getMerchant(store_id);
+    const storeName = merchant?.store_name || 'متجرنا';
+
+    // Verify customer belongs to this store
+    const customer = db.prepare(`
+      SELECT id, store_id, segment
+      FROM customers
+      WHERE id = ? AND store_id = ?
+    `).get(customerId, store_id);
+
+    if (!customer) {
+      return res.status(404).json({ error: 'Customer not found or does not belong to this store' });
+    }
+
+    // Send the message
+    const result = await messageEngine.sendSegmentMessage(customerId, segment, storeName);
+
+    if (result.success) {
+      res.json({
+        success: true,
+        message: 'Message sent successfully',
+        customer_name: result.customer_name,
+        phone: result.phone,
+        segment: result.segment,
+        message_text: result.message
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: result.error || 'Failed to send message'
+      });
+    }
+  } catch (error) {
+    console.error('Send message error:', error);
+    res.status(500).json({ error: 'Failed to send message', details: error.message });
   }
 });
 
