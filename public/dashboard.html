@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zid Retention Engine - Dashboard</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🐝 Zid Retention Engine - Honey Store Edition</h1>
+            <div class="header-actions">
+                <input type="number" id="storeId" placeholder="Store ID" value="1" min="1">
+                <button onclick="loadData()">تحديث البيانات</button>
+                <button onclick="syncCustomers()">مزامنة العملاء</button>
+            </div>
+        </header>
+
+        <!-- Section A: Customer Segmentation Overview -->
+        <section class="section">
+            <h2>📊 نظرة عامة على تجزئة العملاء</h2>
+            
+            <div class="stats-grid">
+                <div class="stat-card new">
+                    <div class="stat-label">جدد</div>
+                    <div class="stat-value" id="stat-new">0</div>
+                </div>
+                <div class="stat-card active">
+                    <div class="stat-label">نشطون</div>
+                    <div class="stat-value" id="stat-active">0</div>
+                </div>
+                <div class="stat-card at-risk">
+                    <div class="stat-label">معرضون للخطر</div>
+                    <div class="stat-value" id="stat-at-risk">0</div>
+                </div>
+                <div class="stat-card churned">
+                    <div class="stat-label">متوقفون</div>
+                    <div class="stat-value" id="stat-churned">0</div>
+                </div>
+                <div class="stat-card vip">
+                    <div class="stat-label">VIP</div>
+                    <div class="stat-value" id="stat-vip">0</div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table class="customers-table">
+                    <thead>
+                        <tr>
+                            <th>الاسم</th>
+                            <th>الطلبات</th>
+                            <th>إجمالي الإنفاق</th>
+                            <th>آخر طلب</th>
+                            <th>الحالة</th>
+                            <th>إجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody id="customers-tbody">
+                        <tr>
+                            <td colspan="6" class="loading">جاري التحميل...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Section B: Honey Product Settings -->
+        <section class="section">
+            <h2>🍯 إعدادات منتجات العسل</h2>
+            <p class="section-description">
+                قم بتكوين متوسط أيام الانتهاء من كل منتج عسل لإرسال تذكيرات إعادة الطلب تلقائياً
+            </p>
+
+            <div class="table-container">
+                <table class="products-table">
+                    <thead>
+                        <tr>
+                            <th>المنتج</th>
+                            <th>SKU</th>
+                            <th>متوسط أيام الانتهاء</th>
+                            <th>أيام الإزاحة</th>
+                            <th>إجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody id="products-tbody">
+                        <tr>
+                            <td colspan="5" class="loading">جاري التحميل...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Reminders Section -->
+        <section class="section">
+            <h2>📨 التذكيرات</h2>
+            <div class="reminder-actions">
+                <button onclick="sendReminders()">إرسال التذكيرات المعلقة</button>
+                <button onclick="calculateReminders()">حساب التذكيرات من الطلبات</button>
+            </div>
+            <div id="reminder-status"></div>
+        </section>
+    </div>
+
+    <script src="/dashboard.js"></script>
+</body>
+</html>
+

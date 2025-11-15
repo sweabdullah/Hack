@@ -1,0 +1,20 @@
+{
+  "name": "zid-retention-engine",
+  "version": "1.0.0",
+  "description": "Zid Partner App for Honey Store Customer Retention",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["zid", "retention", "honey", "ecommerce"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "better-sqlite3": "^9.2.2",
+    "axios": "^1.6.2",
+    "dotenv": "^16.3.1"
+  }
+}
+
