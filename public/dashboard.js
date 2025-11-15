@@ -1,6 +1,7 @@
 // Dashboard JavaScript
 
 let currentStoreId = 1;
+let messageHistory = []; // In-memory message history
 
 // Get store ID from input
 function getStoreId() {
@@ -293,7 +294,21 @@ async function sendMessageToCustomer(customerId, segment, buttonElement) {
         const data = await response.json();
         
         if (data.success) {
-            alert(`تم إرسال الرسالة بنجاح إلى ${data.customer_name}\n\nالرسالة:\n${data.message_text}`);
+            // Add message to history
+            const messageData = {
+                customer_name: data.customer_name,
+                phone: data.phone,
+                message_text: data.message_text,
+                segment: data.segment,
+                sent_at: new Date()
+            };
+            messageHistory.push(messageData);
+            
+            // Display message in phone mockup
+            displayMessageInPhone(messageData);
+            
+            // Show success notification (optional, can remove alert)
+            // alert(`تم إرسال الرسالة بنجاح إلى ${data.customer_name}`);
         } else {
             alert('خطأ: ' + (data.error || 'فشل إرسال الرسالة'));
         }
@@ -324,6 +339,61 @@ function sendCoupon(customerId) {
 function sendVipMessage(customerId) {
     const button = event.target;
     sendMessageToCustomer(customerId, 'VIP', button);
+}
+
+// Phone Mockup Functions
+function togglePhoneMockup() {
+    const phoneMockup = document.getElementById('phoneMockup');
+    phoneMockup.classList.toggle('hidden');
+}
+
+function displayMessageInPhone(messageData) {
+    const phoneMessages = document.getElementById('phoneMessages');
+    const phoneContactName = document.getElementById('phoneContactName');
+    const phoneContactNumber = document.getElementById('phoneContactNumber');
+    
+    // Update contact info
+    phoneContactName.textContent = messageData.customer_name || 'عميل';
+    phoneContactNumber.textContent = messageData.phone || '-';
+    
+    // Remove empty message if exists
+    const emptyMsg = phoneMessages.querySelector('.message-empty');
+    if (emptyMsg) {
+        emptyMsg.remove();
+    }
+    
+    // Create message bubble
+    const messageBubble = document.createElement('div');
+    messageBubble.className = 'message-bubble sent';
+    
+    const messageContent = document.createElement('div');
+    messageContent.className = 'message-content';
+    messageContent.textContent = messageData.message_text;
+    
+    const messageTime = document.createElement('div');
+    messageTime.className = 'message-time';
+    messageTime.textContent = formatTime(messageData.sent_at);
+    
+    messageContent.appendChild(messageTime);
+    messageBubble.appendChild(messageContent);
+    
+    // Add to messages container
+    phoneMessages.appendChild(messageBubble);
+    
+    // Auto-scroll to bottom
+    phoneMessages.scrollTop = phoneMessages.scrollHeight;
+    
+    // Show phone mockup if hidden
+    const phoneMockup = document.getElementById('phoneMockup');
+    phoneMockup.classList.remove('hidden');
+}
+
+function formatTime(date) {
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    const ampm = hours >= 12 ? 'م' : 'ص';
+    const hours12 = hours % 12 || 12;
+    return `${hours12}:${minutes.toString().padStart(2, '0')} ${ampm}`;
 }
 
 // Load data on page load
